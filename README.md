@@ -1,0 +1,2 @@
+# odbctest
+check odbc latency
