@@ -10,5 +10,6 @@ checkout 이후 compile해서 사용한다.
 $> git clone https://github.com/json-c/json-c 
 $> cd json-c
 $> autogen.sh
-$> make
+$> configure --prefix=$PWD
+$> make && make install
 ```
