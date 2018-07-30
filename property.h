@@ -35,6 +35,7 @@ typedef struct _Property {
     char  mPWD[ MAX_PWD_LEN +1 ];
     unsigned long  mArray;
     unsigned long  mAutoCommit;
+    useconds_t     mUSleep;
     int   mRepeat;
     int   mExecuteType;
     int   mQueryType;    

@@ -207,6 +207,10 @@ int doJSonParsing( json_object * aJSonObject )
         {
             gProperty.mArray = json_object_get_int( sVal );
         }
+        else if( strcasecmp( sKey, "USLEEP" ) == 0 )
+        {
+            gProperty.mUSleep = json_object_get_int( sVal );
+        }
         else if( strcasecmp( sKey, "COMMIT_INTERVAL" ) == 0 )
         {
             gProperty.mCommitInterval = json_object_get_int( sVal );

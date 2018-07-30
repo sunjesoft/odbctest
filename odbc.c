@@ -4,24 +4,23 @@
 SQLHENV gEnv;
 SQLHDBC gDbc;
 
-int checkLatency();
+int  checkLatency();
 void PrintDiagnosticRecord( SQLSMALLINT aHandleType, SQLHANDLE aHandle );
-int initODBC();
-int allocRowStatus( RecordData* aRecordData );
-int setFetchArray( SQLHSTMT aStmt , RecordData* aRecordData );
-int setParamArray( SQLHSTMT aStmt , RecordData* aRecordData );
-int prepareSQL( SQLHSTMT aStmt , SQLCHAR* aQuery );
-int executeSQL( SQLHSTMT aStmt );
+int  initODBC();
+int  allocRowStatus( RecordData* aRecordData );
+int  setFetchArray( SQLHSTMT aStmt , RecordData* aRecordData );
+int  setParamArray( SQLHSTMT aStmt , RecordData* aRecordData );
+int  prepareSQL( SQLHSTMT aStmt , SQLCHAR* aQuery );
+int  executeSQL( SQLHSTMT aStmt );
 void printExecutedQueryType( SQLLEN aQueryType );
-int getExecutedQueryType( SQLHSTMT aStmt );
-int getResultSetMeta( SQLHSTMT aStmt , RecordInfo* aRecordInfo );
-int doFetch( SQLHSTMT aStmt ,  RecordInfo* aRecordInfo, RecordData* aRecordData );
+int  getExecutedQueryType( SQLHSTMT aStmt );
+int  getResultSetMeta( SQLHSTMT aStmt , RecordInfo* aRecordInfo );
+int  doFetch( SQLHSTMT aStmt ,  RecordInfo* aRecordInfo, RecordData* aRecordData );
 void freeRecordInfo( RecordInfo* aRecordInfo );
 void freeRecordData( RecordData* aRecordData );
-int allocColumnData( RecordInfo* aRecordInfo , RecordData* aRecordData );
-int bindColumns( SQLHSTMT aStmt, RecordInfo* aRecordInfo , RecordData* aRecordData );
-int checkLatency();
-int printColumnData( RecordInfo* aRecordInfo , RecordData* aRecordData , SQLULEN aFetchedCount );
+int  allocColumnData( RecordInfo* aRecordInfo , RecordData* aRecordData );
+int  bindColumns( SQLHSTMT aStmt, RecordInfo* aRecordInfo , RecordData* aRecordData );
+int  printColumnData( RecordInfo* aRecordInfo , RecordData* aRecordData , SQLULEN aFetchedCount );
 
 
 void PrintDiagnosticRecord( SQLSMALLINT aHandleType, SQLHANDLE aHandle )
@@ -658,6 +657,11 @@ int checkLatency()
 				SQLEndTran( SQL_HANDLE_DBC, gDbc, SQL_COMMIT );
 				gettimeofday( & gCommit.mEnd, NULL );
 			}
+
+            if( gProperty.mUSleep > 0 )
+            {
+                usleep( gProperty.mUSleep );
+            }
             
         }
         else
