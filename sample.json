@@ -1,0 +1,15 @@
+{
+    "SUNDB": {
+        "DSN": "SUNDB",
+		"UID": "test",
+		"PWD": "test",
+		"ARRAY": 1024,
+		"AUTOCOMMIT": "ON",
+		"IS_DIRECT_EXECUTE":"NO",
+		"COMMIT_INTERVAL": 1
+	},
+	"SQL": "select /*+ index( t1, T1_PRIMARY_KEY_INDEX ) */ * from t1",
+	"REPEAT": 1,
+	"OUTFILE": "t1.dat"
+	
+}
