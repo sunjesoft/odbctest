@@ -638,7 +638,7 @@ int checkLatency()
 
 			SQLCloseCursor( sStmt );
         }
-        else if( gProperty.mQueryType == SQL_DIAG_INSERT ||
+        else if( gProperty.mQueryType == SQL_DIAG_INSERT       ||
                  gProperty.mQueryType == SQL_DIAG_UPDATE_WHERE ||
                  gProperty.mQueryType == SQL_DIAG_DELETE_WHERE )
         {
@@ -656,6 +656,8 @@ int checkLatency()
 				gettimeofday( & gCommit.mStart, NULL );
 				SQLEndTran( SQL_HANDLE_DBC, gDbc, SQL_COMMIT );
 				gettimeofday( & gCommit.mEnd, NULL );
+				getDiffTime( & gCommit );
+				gTotCommitCount++;
 			}
 
             if( gProperty.mUSleep > 0 )
@@ -664,6 +666,27 @@ int checkLatency()
             }
             
         }
+	else if( gProperty.mQueryType == SQL_DIAG_CALL )
+	{
+            gProperty.mArray = 1;
+
+            sRecordData.mTotalCount += 1;
+
+			if( (sCount % gProperty.mCommitInterval) == 0 )
+			{
+				gettimeofday( & gCommit.mStart, NULL );
+				SQLEndTran( SQL_HANDLE_DBC, gDbc, SQL_COMMIT );
+				gettimeofday( & gCommit.mEnd, NULL );
+				getDiffTime( & gCommit );
+				gTotCommitCount++;
+			}
+
+            if( gProperty.mUSleep > 0 )
+            {
+                usleep( gProperty.mUSleep );
+            }
+
+	}
         else
         {
             SET_ERROR( "not supported query type. %d", gProperty.mQueryType );
@@ -678,6 +701,12 @@ int checkLatency()
 #ifdef __PRINT_FETCH__
         gFetchTot.mDiff   += gFetch.mDiff;
 #endif
+
+#ifdef __PRINT_COMMIT__
+        gCommitTot.mDiff  += gCommit.mDiff;
+#endif
+
+
 
         gTotRecordCount += sRecordData.mTotalCount;
 

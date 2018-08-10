@@ -104,7 +104,7 @@ void printProperty()
     LOGGER( "REPEAT          : %d", gProperty.mRepeat );
     LOGGER( "COMMIT_INTERVAL : %d", gProperty.mCommitInterval );
 
-    if( gProperty.mAutoCommit == TRUE )
+    if( gProperty.mAutoCommit == AUTOCOMMIT_ON )
     {
         LOGGER( "AUTOCOMMIT      : ON" );
     }
@@ -223,11 +223,11 @@ int doJSonParsing( json_object * aJSonObject )
         {
             if( strcasecmp( json_object_get_string( sVal ), "ON" ) == 0 )
             {
-                gProperty.mAutoCommit = TRUE;
+                gProperty.mAutoCommit = AUTOCOMMIT_ON;
             }
             else if( strcasecmp( json_object_get_string( sVal ), "OFF" ) == 0 )
             {
-                gProperty.mAutoCommit = FALSE;
+                gProperty.mAutoCommit = AUTOCOMMIT_OFF;
             }
             else
             {

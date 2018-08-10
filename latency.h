@@ -30,6 +30,7 @@ extern LatencyData gCommit;
 extern LatencyData gCommitTot;
 
 int   gTotRecordCount;
+int   gTotCommitCount;
 FILE* gOutfileFp;
 
 void initLatencyData();

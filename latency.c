@@ -14,6 +14,7 @@ LatencyData gCommit;
 LatencyData gCommitTot;
 
 extern int gTotRecordCount;
+extern int gTotCommitCount;
 
 void initLatencyData()
 {
@@ -27,6 +28,7 @@ void initLatencyData()
     memset( & gFetchTot  , 0x00 , sizeof( LatencyData ) );
 
     gTotRecordCount = 0;
+    gTotCommitCount = 0;
 
     if( strlen( gProperty.mOutfile ) > 0 )
     {
@@ -109,6 +111,20 @@ void printLatencyData()
                 "[Fetch Tot Latency]",
                 gFetchTot.mDiff);
 #endif
+
     }
+    else
+    {
+#ifdef __PRINT_COMMIT__
+	LOGGER( "   %25s : %lu usec",
+		"[Commit Avg Latency]",
+		gCommitTot.mDiff / gTotCommitCount );
+
+	LOGGER( "   %25s : %lu usec",
+		"[Commit Tot Latency]",
+		gCommitTot.mDiff);
+#endif
+    }
+
 
 }

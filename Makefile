@@ -1,6 +1,6 @@
 
 CC = gcc
-CFLAGS = -g -Wall -Wno-switch-enum -D__PRINT_CONN__ -D__PRINT_FETCH__ -D__PRINT_BIND__
+CFLAGS = -g -Wall -Wno-switch-enum -D__PRINT_CONN__ -D__PRINT_FETCH__ -D__PRINT_BIND__ -D__PRINT_COMMIT__
 
 DB=goldilocks
 
