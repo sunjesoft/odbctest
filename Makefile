@@ -1,5 +1,5 @@
 
-CC = gcc
+CC = g++
 CFLAGS = -g -Wall -Wno-switch-enum -D__PRINT_CONN__ -D__PRINT_FETCH__ -D__PRINT_BIND__ -D__PRINT_COMMIT__
 
 DB=goldilocks
@@ -27,7 +27,7 @@ endif
 INC=-I. -I$(DB_HOME)/include -I$(JSON)/include
 LFLAGS = -L$(DB_HOME)/lib
 
-OBJECTS = main.o log.o property.o odbc.o latency.o
+OBJECTS = main.o log.o property.o odbc.o latency.o timer.o
 TARGET = testd testcs testds testcss
 
 

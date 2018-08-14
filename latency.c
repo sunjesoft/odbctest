@@ -2,30 +2,30 @@
 
 #include <latency.h>
 
-LatencyData gConnection;
-LatencyData gPrepare;
-LatencyData gExecute;
-LatencyData gExecuteTot;
-LatencyData gBindCol;
-LatencyData gBindColTot;
-LatencyData gFetch;
-LatencyData gFetchTot;
-LatencyData gCommit;
-LatencyData gCommitTot;
+HTIMER* gConnection;
+HTIMER* gPrepare;
+HTIMER* gExecute;
+HTIMER* gBindCol;
+HTIMER* gFetch;
+HTIMER* gCommit;
 
-extern int gTotRecordCount;
-extern int gTotCommitCount;
+int   gTotRecordCount;
+int   gTotCommitCount;
+int   gTotFetchCount;
+FILE* gOutfileFp;
 
-void initLatencyData()
+void initTimer()
 {
-    memset( & gConnection, 0x00 , sizeof( LatencyData ) );
-    memset( & gPrepare   , 0x00 , sizeof( LatencyData ) );
-    memset( & gExecute   , 0x00 , sizeof( LatencyData ) );
-    memset( & gExecuteTot, 0x00 , sizeof( LatencyData ) );
-    memset( & gBindCol   , 0x00 , sizeof( LatencyData ) );
-    memset( & gBindColTot, 0x00 , sizeof( LatencyData ) );
-    memset( & gFetch     , 0x00 , sizeof( LatencyData ) );
-    memset( & gFetchTot  , 0x00 , sizeof( LatencyData ) );
+    enum unit_type unit = gProperty.mTimerUnit;
+    int begin    = gProperty.mTimerBegin;
+    int interval = gProperty.mTimerInterval;
+    int count    = gProperty.mTimerCount;
+    gConnection = init_timer( unit, begin, interval, count );
+    gPrepare    = init_timer( unit, begin, interval, count );
+    gExecute    = init_timer( unit, begin, interval, count );
+    gBindCol    = init_timer( unit, begin, interval, count );
+    gFetch      = init_timer( unit, begin, interval, count );
+    gCommit     = init_timer( unit, begin, interval, count );
 
     gTotRecordCount = 0;
     gTotCommitCount = 0;
@@ -44,12 +44,6 @@ void initLatencyData()
     }
 }
 
-void getDiffTime( LatencyData* aLatencyData )
-{
-    aLatencyData->mDiff = (unsigned long) (aLatencyData->mEnd.tv_sec - aLatencyData->mStart.tv_sec) * 1000000  +
-        (aLatencyData->mEnd.tv_usec - aLatencyData->mStart.tv_usec);
-}
-
 
 void printLatencyData()
 {
@@ -57,72 +51,39 @@ void printLatencyData()
     if( gTotRecordCount == 0 )
         gTotRecordCount++;
 
-    LOGGER( "=== Result data of latency ===" );
-    LOGGER( "" );
-    LOGGER( "Repeat of Execution : %d", gProperty.mRepeat );
-    LOGGER( "" );
+    LOGGER( "=== Result data of latency ===\n\n" );
+    LOGGER( "Repeat of Execution : %d\n\n", gProperty.mRepeat );
 #ifdef __PRINT_CONN__
-    LOGGER( "   %25s : %lu usec",
-            "[Connection Latency]",
-            gConnection.mDiff);
+    LOGGER("[Connection]\n");
+    elapse_timer( gConnection , gTotCommitCount );
 #endif
 
     if( gProperty.mExecuteType == PREPARE_EXECUTE )
     {
-        LOGGER( "   %25s : %lu usec",
-                "[Prepare Latency]",
-                gPrepare.mDiff);
+        LOGGER("[Prepare]\n");
+        elapse_timer( gPrepare , gProperty.mRepeat );
     }
 
-    LOGGER( "   %25s : %lu usec",
-            "[Execute Avg Latency]",
-            gExecuteTot.mDiff / gProperty.mRepeat);
+    LOGGER("[Execute]\n");
+    elapse_timer( gExecute , gProperty.mRepeat );
 
     if( gProperty.mQueryType == SQL_DIAG_SELECT_CURSOR )
     {
 #ifdef __PRINT_BIND__
-        LOGGER( "   %25s : %lu usec",
-                "[BindCol Avg Latency]",
-                gBindColTot.mDiff / gProperty.mRepeat);
+        LOGGER("[BindColumn]\n");
+        elapse_timer( gBindCol , gProperty.mRepeat );
 #endif        
 
 #ifdef __PRINT_FETCH__
-        LOGGER( "   %25s : %lu usec",
-                "[Fetch Avg Latency]",
-                gFetchTot.mDiff / gTotRecordCount); 
+        LOGGER("[Fetch]\n");
+        elapse_timer( gFetch , gTotFetchCount );
 #endif
-    }
-
-    LOGGER( "   %25s : %lu usec",
-            "[Execute Tot Latency]",
-            gExecuteTot.mDiff);
-
-    if( gProperty.mQueryType == SQL_DIAG_SELECT_CURSOR )
-    {
-
-#ifdef __PRINT_BIND__
-        LOGGER( "   %25s : %lu usec",
-                "[BindCol Tot Latency]",
-                gBindColTot.mDiff);
-#endif
-
-#ifdef __PRINT_FETCH__
-        LOGGER( "   %25s : %lu usec",
-                "[Fetch Tot Latency]",
-                gFetchTot.mDiff);
-#endif
-
     }
     else
     {
 #ifdef __PRINT_COMMIT__
-	LOGGER( "   %25s : %lu usec",
-		"[Commit Avg Latency]",
-		gCommitTot.mDiff / gTotCommitCount );
-
-	LOGGER( "   %25s : %lu usec",
-		"[Commit Tot Latency]",
-		gCommitTot.mDiff);
+        LOGGER("[Commit]\n");
+        elapse_timer( gCommit , gTotCommitCount );
 #endif
     }
 

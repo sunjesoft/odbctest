@@ -2,6 +2,7 @@
 #include <common.h>
 #include <json-c/json.h>
 #include <log.h>
+#include <timer.h>
 
 
 
@@ -42,6 +43,10 @@ typedef struct _Property {
     int   mCommitInterval;
     char  mQuery[ MAX_QUERY_LEN +1 ];
     char  mOutfile[ MAX_OUTFILE_LEN +1 ];
+    enum unit_type mTimerUnit;
+    int   mTimerBegin;
+    int   mTimerInterval;
+    int   mTimerCount;
 }Property;
 
 int setControlFile( const char* aControlFile );

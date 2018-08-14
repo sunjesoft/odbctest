@@ -51,11 +51,11 @@ void PrintDiagnosticRecord( SQLSMALLINT aHandleType, SQLHANDLE aHandle )
 
         STL_TRY( sReturn == SQL_SUCCESS );
 
-        SET_ERROR("=============================================" );
-        SET_ERROR("SQL_DIAG_SQLSTATE     : %s", sSQLState );
-        SET_ERROR("SQL_DIAG_NATIVE       : %d", sNaiveError );
-        SET_ERROR("SQL_DIAG_MESSAGE_TEXT : %s", sMessageText );
-        SET_ERROR("=============================================" );
+        SET_ERROR("=============================================\n" );
+        SET_ERROR("SQL_DIAG_SQLSTATE     : %s\n", sSQLState );
+        SET_ERROR("SQL_DIAG_NATIVE       : %d\n", sNaiveError );
+        SET_ERROR("SQL_DIAG_MESSAGE_TEXT : %s\n", sMessageText );
+        SET_ERROR("=============================================\n" );
 
         sRecNumber++;
     }
@@ -89,7 +89,7 @@ int initODBC()
 
     
 #ifdef __PRINT_CONN__
-    gettimeofday( & gConnection.mStart, NULL );
+    start_timer( gConnection );
 #endif
     STL_TRY_THROW( SQLConnect( gDbc,
                                (SQLCHAR*)gProperty.mDSN,
@@ -100,9 +100,7 @@ int initODBC()
                                SQL_NTS) == SQL_SUCCESS,
                    RAMP_ERR_DBC );
 #ifdef __PRINT_CONN__
-    gettimeofday( & gConnection.mEnd, NULL );
-
-    getDiffTime( & gConnection );
+    end_timer( gConnection );
 #endif
 
     STL_TRY_THROW( SQLSetConnectAttr( gDbc,
@@ -127,7 +125,7 @@ int initODBC()
 
     STL_FINISH;
 
-    SET_ERROR( "initialize ODBC, fail." );
+    SET_ERROR( "initialize ODBC, fail.\n" );
     
     return FAIL;
 
@@ -135,7 +133,7 @@ int initODBC()
 
 int allocRowStatus( RecordData* aRecordData )
 {
-    aRecordData->mRowStatus = calloc( gProperty.mArray, sizeof( SQLUSMALLINT ) );
+    aRecordData->mRowStatus = (SQLUSMALLINT*)calloc( gProperty.mArray, sizeof( SQLUSMALLINT ) );
 
     STL_TRY( aRecordData->mRowStatus != NULL );
 
@@ -143,7 +141,7 @@ int allocRowStatus( RecordData* aRecordData )
 
     STL_FINISH;
 
-    SET_ERROR( "row_status allocate failed. %s", strerror( errno ) );
+    SET_ERROR( "row_status allocate failed. %s\n", strerror( errno ) );
 
     return FAIL;
 }
@@ -211,15 +209,13 @@ int prepareSQL( SQLHSTMT aStmt , SQLCHAR* aQuery )
 {
     if( gProperty.mExecuteType == PREPARE_EXECUTE )
     {
-        gettimeofday( &gPrepare.mStart, NULL );
+        start_timer( gPrepare );
         STL_TRY_THROW( SQLPrepare( aStmt,
                                    (SQLCHAR*)gProperty.mQuery,
                                    strlen( gProperty.mQuery ) ) == SQL_SUCCESS,
                        RAMP_ERR_STMT );
 
-        gettimeofday( &gPrepare.mEnd, NULL );
-
-        getDiffTime( & gPrepare );
+        end_timer( gPrepare );
     }
     else
     {
@@ -242,28 +238,26 @@ int executeSQL( SQLHSTMT aStmt )
 {
     if( gProperty.mExecuteType == DIRECT_EXECUTE )
     {
-        gettimeofday( &gExecute.mStart, NULL );
+        start_timer( gExecute );
         STL_TRY_THROW( SQLExecDirect( aStmt,
                                       (SQLCHAR*)gProperty.mQuery,
                                       strlen( gProperty.mQuery ) ) == SQL_SUCCESS,
                        RAMP_ERR_STMT );       
-        gettimeofday( &gExecute.mEnd, NULL );
+        end_timer( gExecute );
     }
     else if( gProperty.mExecuteType == PREPARE_EXECUTE )
     {
-        gettimeofday( &gExecute.mStart, NULL );
+        start_timer( gExecute );
         STL_TRY_THROW( SQLExecute( aStmt ) == SQL_SUCCESS,
                        RAMP_ERR_STMT );
-        gettimeofday( &gExecute.mEnd, NULL );
+        end_timer( gExecute );
     }
     else
     {
-        SET_ERROR( "invalid execute type." );
+        SET_ERROR( "invalid execute type.\n" );
         STL_THROW( STL_FINISH_LABEL );
     }
 
-    getDiffTime( & gExecute );
-    
 
     return SUCCESS;
 
@@ -282,24 +276,24 @@ void printExecutedQueryType( SQLLEN aQueryType )
     switch( aQueryType )
     {
         case SQL_DIAG_DELETE_WHERE:
-            LOGGER( "Query Type : DLETE" );
+            LOGGER( "Query Type : DLETE\n" );
             break;
             
         case SQL_DIAG_INSERT:
-            LOGGER( "Query Type : INSERT" );
+            LOGGER( "Query Type : INSERT\n" );
             break;
             
         case SQL_DIAG_SELECT_CURSOR:
-            LOGGER( "Query Type : SELECT" );
+            LOGGER( "Query Type : SELECT\n" );
             break;
             
         case SQL_DIAG_UPDATE_WHERE:
-            LOGGER( "Query Type : UPDATE" );
+            LOGGER( "Query Type : UPDATE\n" );
             break;
             
         case SQL_DIAG_UNKNOWN_STATEMENT:
         default:
-            LOGGER( "Query Type : unknown [%d]", aQueryType );
+            LOGGER( "Query Type : unknown [%d]\n", aQueryType );
             break;
             
     }
@@ -361,7 +355,7 @@ int getResultSetMeta( SQLHSTMT aStmt , RecordInfo* aRecordInfo )
                    RAMP_ERR_STMT );
 
     aRecordInfo->mColumnCount = sColumnCount;
-    aRecordInfo->mColumn = calloc( sColumnCount, sizeof( ColumnInfo ) );
+    aRecordInfo->mColumn = (ColumnInfo*)calloc( sColumnCount, sizeof( ColumnInfo ) );
 
     for( sIndex = 0; sIndex < sColumnCount; sIndex++ )
     {
@@ -407,18 +401,16 @@ int getResultSetMeta( SQLHSTMT aStmt , RecordInfo* aRecordInfo )
 int doFetch( SQLHSTMT aStmt , RecordInfo* aRecordInfo , RecordData* aRecordData )
 {
     SQLRETURN sRet = SQL_ERROR;
-    LatencyData sTempData;
-
-    memset( & sTempData, 0x00, sizeof( sTempData ) );
 
     while( 1 )
     {
 #ifdef __PRINT_FETCH__
-        gettimeofday( &gFetch.mStart, NULL );
+        start_timer( gFetch );
 #endif
         sRet = SQLFetch( aStmt );
 #ifdef __PRINT_FETCH__
-        gettimeofday( &gFetch.mEnd, NULL );
+        end_timer( gFetch );
+        gTotFetchCount++;
 #endif
         if( sRet == SQL_SUCCESS )
         {
@@ -439,16 +431,7 @@ int doFetch( SQLHSTMT aStmt , RecordInfo* aRecordInfo , RecordData* aRecordData 
             PrintDiagnosticRecord( SQL_HANDLE_STMT, aStmt );
             STL_THROW( STL_FINISH_LABEL );
         }
-
-#ifdef __PRINT_FETCH__
-        getDiffTime( & gFetch );
-        sTempData.mDiff += gFetch.mDiff;
-#endif
     }
-
-#ifdef __PRINT_FETCH__
-    gFetch.mDiff = sTempData.mDiff;
-#endif
 
     if( gOutfileFp != NULL )
     {
@@ -512,24 +495,24 @@ int allocColumnData( RecordInfo* aRecordInfo , RecordData* aRecordData )
 
     memset( (void*)aRecordData, 0x00, sizeof( RecordData ) );
     
-    aRecordData->mColData = calloc( aRecordInfo->mColumnCount , sizeof( ColumnData ) );
+    aRecordData->mColData = (ColumnData*)calloc( aRecordInfo->mColumnCount , sizeof( ColumnData ) );
 
     STL_TRY( aRecordData->mColData != NULL );
 
     for( sIndex = 0; sIndex < aRecordInfo->mColumnCount; sIndex++ )
     {
-        aRecordData->mColData[ sIndex ].mData =
+        aRecordData->mColData[ sIndex ].mData = (SQLCHAR*)
             calloc( (aRecordInfo->mColumn[ sIndex ].mColDisplaySize+1) , gProperty.mArray );
 
         STL_TRY( aRecordData->mColData[ sIndex ].mData != NULL );
 
-		aRecordData->mColData[ sIndex ].mDataInd =
+		aRecordData->mColData[ sIndex ].mDataInd = (SQLLEN*)
 			calloc( sizeof( SQLLEN ), gProperty.mArray );
 
         STL_TRY( aRecordData->mColData[ sIndex ].mDataInd != NULL );
     }
 
-    aRecordData->mRowStatus = calloc( gProperty.mArray, sizeof( SQLUSMALLINT ) );
+    aRecordData->mRowStatus = (SQLUSMALLINT*)calloc( gProperty.mArray, sizeof( SQLUSMALLINT ) );
 
     STL_TRY( aRecordData->mRowStatus != NULL );
 
@@ -546,7 +529,7 @@ int allocColumnData( RecordInfo* aRecordInfo , RecordData* aRecordData )
         }
     }
 
-    SET_ERROR( "memory allocation failed. %s", strerror( errno ) );
+    SET_ERROR( "memory allocation failed. %s\n", strerror( errno ) );
 
     return FAIL;
 }
@@ -557,7 +540,7 @@ int bindColumns( SQLHSTMT aStmt, RecordInfo* aRecordInfo , RecordData* aRecordDa
     SQLRETURN sRet = SQL_ERROR;
 
 #ifdef __PRINT_BIND__
-    gettimeofday( & gBindCol.mStart, NULL );
+    start_timer( gBindCol );
 #endif
     for( sIndex = 0; sIndex < aRecordInfo->mColumnCount; sIndex++ )
     {
@@ -571,9 +554,7 @@ int bindColumns( SQLHSTMT aStmt, RecordInfo* aRecordInfo , RecordData* aRecordDa
                        RAMP_ERR_STMT );
     }
 #ifdef __PRINT_BIND__
-    gettimeofday( & gBindCol.mEnd, NULL );
-
-    getDiffTime( & gBindCol );
+    end_timer( gBindCol );
 #endif
 
     return SUCCESS;
@@ -599,6 +580,10 @@ int checkLatency()
     memset( &sRecordInfo, 0x00, sizeof( sRecordInfo ));
     memset( &sRecordData, 0x00, sizeof( sRecordData ));
 
+
+    gTotRecordCount = 0;
+    gTotFetchCount  = 0;
+    gTotCommitCount = 0;
     STL_TRY_THROW( SQLAllocHandle( SQL_HANDLE_STMT,
                                    gDbc,
                                    & sStmt ) == SQL_SUCCESS,
@@ -608,9 +593,6 @@ int checkLatency()
 
     for( sIndex = 0; sIndex < gProperty.mRepeat; sIndex++ )
     {
-        gExecute.mDiff          = 0;
-        gBindCol.mDiff          = 0;
-        gFetch.mDiff            = 0;
         sRecordData.mTotalCount = 0;
         
         STL_TRY( executeSQL( sStmt ) == SUCCESS );
@@ -653,10 +635,9 @@ int checkLatency()
 
 			if( (sCount % gProperty.mCommitInterval) == 0 )
 			{
-				gettimeofday( & gCommit.mStart, NULL );
+				start_timer( gCommit );
 				SQLEndTran( SQL_HANDLE_DBC, gDbc, SQL_COMMIT );
-				gettimeofday( & gCommit.mEnd, NULL );
-				getDiffTime( & gCommit );
+				end_timer( gCommit );
 				gTotCommitCount++;
 			}
 
@@ -666,46 +647,30 @@ int checkLatency()
             }
             
         }
-	else if( gProperty.mQueryType == SQL_DIAG_CALL )
-	{
+        else if( gProperty.mQueryType == SQL_DIAG_CALL )
+        {
             gProperty.mArray = 1;
 
             sRecordData.mTotalCount += 1;
 
-			if( (sCount % gProperty.mCommitInterval) == 0 )
-			{
-				gettimeofday( & gCommit.mStart, NULL );
-				SQLEndTran( SQL_HANDLE_DBC, gDbc, SQL_COMMIT );
-				gettimeofday( & gCommit.mEnd, NULL );
-				getDiffTime( & gCommit );
-				gTotCommitCount++;
-			}
+            if( (sCount % gProperty.mCommitInterval) == 0 )
+            {
+                start_timer( gCommit );
+                SQLEndTran( SQL_HANDLE_DBC, gDbc, SQL_COMMIT );
+                end_timer( gCommit );
+                gTotCommitCount++;
+            }
 
             if( gProperty.mUSleep > 0 )
             {
                 usleep( gProperty.mUSleep );
             }
 
-	}
+        }
         else
         {
-            SET_ERROR( "not supported query type. %d", gProperty.mQueryType );
+            SET_ERROR( "not supported query type. %d\n", gProperty.mQueryType );
         }
-
-        gExecuteTot.mDiff += gExecute.mDiff;
-
-#ifdef __PRINT_BIND__
-        gBindColTot.mDiff += gBindCol.mDiff;
-#endif
-
-#ifdef __PRINT_FETCH__
-        gFetchTot.mDiff   += gFetch.mDiff;
-#endif
-
-#ifdef __PRINT_COMMIT__
-        gCommitTot.mDiff  += gCommit.mDiff;
-#endif
-
 
 
         gTotRecordCount += sRecordData.mTotalCount;
@@ -723,15 +688,13 @@ int checkLatency()
 
     if( gProperty.mQueryType == SQL_DIAG_SELECT_CURSOR )
     {
-        LOGGER( "Fetched Record Count : %lu", gTotRecordCount );
-        LOGGER( "" );
+        LOGGER( "Fetched Record Count : %lu\n", gTotRecordCount );
     }
     else if( gProperty.mQueryType == SQL_DIAG_INSERT ||
              gProperty.mQueryType == SQL_DIAG_UPDATE_WHERE ||
              gProperty.mQueryType == SQL_DIAG_DELETE_WHERE )
     {
-        LOGGER( "Affected Record Count : %lu", gTotRecordCount );
-        LOGGER( "" );
+        LOGGER( "Affected Record Count : %lu\n", gTotRecordCount );
     }
 
     if( sStmt != NULL )
@@ -797,6 +760,11 @@ int printColumnData( RecordInfo* aRecordInfo , RecordData* aRecordData, SQLULEN 
     int sColumnSize;
     int sColumnIndex;
     int sColumnCount = aRecordInfo->mColumnCount;
+
+    if( gOutfileFp == NULL )
+    {
+        return SUCCESS;
+    }
 
     for( sRecordIndex = 0; sRecordIndex < sFetchedCount; sRecordIndex++ )
     {

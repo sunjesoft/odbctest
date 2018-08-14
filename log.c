@@ -20,7 +20,6 @@ void logPrint( int aLineNo, const char* aFormat, ... )
     vfprintf( gLogStream, aFormat, sArgPtr );
     va_end( sArgPtr );
 
-    fputc( '\n', gLogStream );
     fflush( gLogStream );
 }
 
@@ -32,7 +31,6 @@ void Print( const char* aFormat, ... )
     vfprintf( gLogStream, aFormat, sArgPtr );
     va_end( sArgPtr );
 
-    fputc( '\n', gLogStream );
     fflush( gLogStream );
 }
 

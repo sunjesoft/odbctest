@@ -46,7 +46,7 @@ char* readControlFile( const char* aControlFile )
     STL_TRY_THROW( ( stat( aControlFile , &sJSonFileStat ) == 0 ),
                    RAMP_ERR_STAT );
         
-    STL_TRY_THROW( (sJSonData = calloc( 1, sJSonFileStat.st_size + 1 )) != NULL,
+    STL_TRY_THROW( (sJSonData = (char*)calloc( 1, sJSonFileStat.st_size + 1 )) != NULL,
                    RAMP_ERR_MEMORY_ALLOC_FAILED );
 
     STL_TRY_THROW( (sFd = fopen( aControlFile , "r" )) != NULL,
@@ -59,27 +59,27 @@ char* readControlFile( const char* aControlFile )
 
     STL_CATCH( RAMP_ERR_PARAM_NULL )
     {
-        SET_ERROR( "control file path is null." );
+        SET_ERROR( "control file path is null.\n" );
     }
 
     STL_CATCH( RAMP_ERR_STAT )
     {
-        SET_ERROR( "stat() failed: %s", strerror( errno ) );
+        SET_ERROR( "stat() failed: %s\n", strerror( errno ) );
     }
 
     STL_CATCH( RAMP_ERR_MEMORY_ALLOC_FAILED )
     {
-        SET_ERROR( "calloc() failed: %s", strerror( errno ) );
+        SET_ERROR( "calloc() failed: %s\n", strerror( errno ) );
     }
 
     STL_CATCH( RAMP_ERR_OPEN )
     {
-        SET_ERROR( "fopen() failed: %s", strerror( errno ) );
+        SET_ERROR( "fopen() failed: %s\n", strerror( errno ) );
     }
         
     STL_CATCH( RAMP_ERR_READ )
     {
-        SET_ERROR( "fread() failed: %s", strerror( errno ) );
+        SET_ERROR( "fread() failed: %s\n", strerror( errno ) );
     }
 
     STL_FINISH;
@@ -94,35 +94,34 @@ char* readControlFile( const char* aControlFile )
 
 void printProperty()
 {
-    LOGGER( "=== Property ===" );
-    LOGGER( "" );
-    LOGGER( "DATABASE        : %s", gProperty.mDatabase );
-    LOGGER( "DSN             : %s", gProperty.mDSN );
-    LOGGER( "UID             : %s", gProperty.mUID );
-    LOGGER( "PWD             : %s", gProperty.mPWD );
-    LOGGER( "ARRAY           : %d", gProperty.mArray );
-    LOGGER( "REPEAT          : %d", gProperty.mRepeat );
-    LOGGER( "COMMIT_INTERVAL : %d", gProperty.mCommitInterval );
+    LOGGER( "=== Property ===\n\n" );
+    LOGGER( "DATABASE        : %s\n", gProperty.mDatabase );
+    LOGGER( "DSN             : %s\n", gProperty.mDSN );
+    LOGGER( "UID             : %s\n", gProperty.mUID );
+    LOGGER( "PWD             : %s\n", gProperty.mPWD );
+    LOGGER( "ARRAY           : %d\n", gProperty.mArray );
+    LOGGER( "REPEAT          : %d\n", gProperty.mRepeat );
+    LOGGER( "COMMIT_INTERVAL : %d\n", gProperty.mCommitInterval );
 
     if( gProperty.mAutoCommit == AUTOCOMMIT_ON )
     {
-        LOGGER( "AUTOCOMMIT      : ON" );
+        LOGGER( "AUTOCOMMIT      : ON\n" );
     }
     else
     {
-        LOGGER( "AUTOCOMMIT      : OFF" );
+        LOGGER( "AUTOCOMMIT      : OFF\n" );
     }
 
     if( gProperty.mExecuteType == DIRECT_EXECUTE )
     {
-        LOGGER( "EXECUTE_TYPE    : DIRECT_EXECUTE" );
+        LOGGER( "EXECUTE_TYPE    : DIRECT_EXECUTE\n" );
     }
     else
     {
-        LOGGER( "EXECUTE_TYPE    : PREPARE_EXECUTE" );
+        LOGGER( "EXECUTE_TYPE    : PREPARE_EXECUTE\n" );
     }
 
-    LOGGER( "SQL             : %s", gProperty.mQuery );
+    LOGGER( "SQL             : %s\n", gProperty.mQuery );
     
 }
 
@@ -152,14 +151,14 @@ int doJSonParsing( json_object * aJSonObject )
         
         if( strlen( sKey ) > MAX_KEY_LEN )
         {
-            SET_ERROR( "key [%s] is too long.", sKey );
+            SET_ERROR( "key [%s] is too long.\n", sKey );
             STL_THROW( STL_FINISH_LABEL );
         }
 
         if( strcasecmp( sKey, "SQL" ) != 0 &&
             strlen( json_object_get_string( sVal ) ) > MAX_VALUE_LEN )
         {
-            SET_ERROR( "[%s]'s value [%s] is too long.", sKey , json_object_get_string( sVal ) );
+            SET_ERROR( "[%s]'s value [%s] is too long.\n", sKey , json_object_get_string( sVal ) );
             STL_THROW( STL_FINISH_LABEL );
         }
         
@@ -173,7 +172,10 @@ int doJSonParsing( json_object * aJSonObject )
                 break;
 
             case json_type_object:
-                strcpy( gProperty.mDatabase , sKey );
+                if( strcasecmp( sKey , "SUNDB" ) == 0 || strcasecmp( sKey , "GOLDILOCKS" ) )
+                {
+                    strcpy( gProperty.mDatabase , sKey );
+                }
 
                 sJSonObject = json_object_object_get( aJSonObject, sKey );
                 doJSonParsing( sJSonObject );
@@ -181,12 +183,12 @@ int doJSonParsing( json_object * aJSonObject )
                 break;
                 
             case json_type_array:
-                SET_ERROR( "array type not support." );
+                SET_ERROR( "array type not support.\n" );
                 STL_THROW( STL_FINISH_LABEL );
                 break;
 
             default:
-                SET_ERROR( "invalid json_type. %d", (int)sType );
+                SET_ERROR( "invalid json_type. %d\n", (int)sType );
                 STL_THROW( STL_FINISH_LABEL );
                 break;
         }    
@@ -231,7 +233,7 @@ int doJSonParsing( json_object * aJSonObject )
             }
             else
             {
-                SET_ERROR( "Autocommit value [%s] is invalid.", json_object_get_string( sVal ) );
+                SET_ERROR( "Autocommit value [%s] is invalid.\n", json_object_get_string( sVal ) );
                 STL_THROW( STL_FINISH_LABEL );
             }
         }
@@ -247,15 +249,73 @@ int doJSonParsing( json_object * aJSonObject )
             }
             else
             {
-                SET_ERROR( "is_direct_execute value [%s] is invalid.", json_object_get_string( sVal ) );
+                SET_ERROR( "is_direct_execute value [%s] is invalid.\n", json_object_get_string( sVal ) );
                 STL_THROW( STL_FINISH_LABEL );
             }
         }
+        else if( strcasecmp( sKey, "UNIT" ) == 0 )
+        {
+            if( strcasecmp( json_object_get_string( sVal ), "SEC" ) == 0 )
+            {
+                gProperty.mTimerUnit = UNIT_SEC;
+            }
+            else if( strcasecmp( json_object_get_string( sVal ), "MILI" ) == 0 )
+            {
+                gProperty.mTimerUnit = UNIT_MILI;
+            }
+            else if( strcasecmp( json_object_get_string( sVal ), "MICRO" ) == 0 )
+            {
+                gProperty.mTimerUnit = UNIT_MICRO;
+            }
+            else if( strcasecmp( json_object_get_string( sVal ), "NANO" ) == 0 )
+            {
+                gProperty.mTimerUnit = UNIT_NANO;
+            }
+            else
+            {
+                SET_ERROR( "timer unit value [%s] is invalid.\n", json_object_get_string( sVal ) );
+                STL_THROW( STL_FINISH_LABEL );
+            }
+
+        }
+        else if( strcasecmp( sKey, "BEGIN" ) == 0 )
+        {
+            gProperty.mTimerBegin = json_object_get_int( sVal );
+            if( gProperty.mTimerBegin < 1 )
+            {
+                SET_ERROR( "timer begin value [%d] is invalid.\n", gProperty.mTimerBegin  );
+                STL_THROW( STL_FINISH_LABEL );
+            }
+        }
+        else if( strcasecmp( sKey, "INTERVAL" ) == 0 )
+        {
+            gProperty.mTimerInterval = json_object_get_int( sVal );
+            if( gProperty.mTimerInterval < 1 )
+            {
+                SET_ERROR( "timer-interval value [%d] is invalid.\n", gProperty.mTimerInterval );
+                STL_THROW( STL_FINISH_LABEL );
+            }
+        }
+        else if( strcasecmp( sKey, "COUNT" ) == 0 )
+        {
+            gProperty.mTimerCount = json_object_get_int( sVal );
+            if( gProperty.mTimerCount < 5 )
+            {
+                SET_ERROR( "timer-count minimum value is 5.\n" );
+                STL_THROW( STL_FINISH_LABEL );
+            }
+            else if( gProperty.mTimerCount > 30 )
+            {
+                SET_ERROR( "timer-count maximum value is 30.\n" );
+                STL_THROW( STL_FINISH_LABEL );
+            }
+        }
+
         else if( strcasecmp( sKey, "SQL" ) == 0 )
         {
             if( strlen( json_object_get_string( sVal ) ) > MAX_QUERY_LEN )
             {
-                SET_ERROR( "user sql is too long, max value is 8192 byte." );
+                SET_ERROR( "user sql is too long, max value is 8192 byte.\n" );
                 STL_THROW( STL_FINISH_LABEL );
             }
 
@@ -265,7 +325,7 @@ int doJSonParsing( json_object * aJSonObject )
         {
             if( strlen( json_object_get_string( sVal ) ) > MAX_QUERY_LEN )
             {
-                SET_ERROR( "user sql is too long, max value is 8192 byte." );
+                SET_ERROR( "user sql is too long, max value is 8192 byte.\n" );
                 STL_THROW( STL_FINISH_LABEL );
             }
 
@@ -274,7 +334,7 @@ int doJSonParsing( json_object * aJSonObject )
 
         else
         {
-            SET_ERROR( "key [%s] is invalid option name.", sKey );
+            SET_ERROR( "key [%s] is invalid option name.\n", sKey );
             STL_THROW( STL_FINISH_LABEL );
         }
         
@@ -315,12 +375,12 @@ int initProperty()
 
     STL_CATCH( RAMP_ERR_READ_CONTROLFILE )
     {
-        SET_ERROR( "readControlFile() failed." );
+        SET_ERROR( "readControlFile() failed.\n" );
     }
 
     STL_CATCH( RAMP_ERR_JSON_TOKENER )
     {
-        SET_ERROR( "json_tokener_parse() error" );
+        SET_ERROR( "json_tokener_parse() error\n" );
     }
   
     STL_FINISH;

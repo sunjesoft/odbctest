@@ -1,6 +1,6 @@
 {
-    "SUNDB": {
-        "DSN": "NOCS1",
+    "GOLDILOCKS": {
+        "DSN": "goldilocks",
 		"UID": "test",
 		"PWD": "test",
 		"ARRAY": 1,
@@ -8,7 +8,13 @@
 		"IS_DIRECT_EXECUTE":"YES",
 		"COMMIT_INTERVAL": 1,
 	},
-	"SQL": "call proc1",
+	"TIMER": {
+		"UNIT"    : "MICRO",
+		"BEGIN"   : 1,
+		"INTERVAL": 1,
+		"COUNT"   : 20
+	},
+	"SQL": "select sysdate from dual",
 	"REPEAT": 10000
 	
 }
